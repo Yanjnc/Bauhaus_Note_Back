@@ -23,6 +23,7 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Controller
@@ -35,9 +36,10 @@ public class NoteController {
     @CrossOrigin
     @GetMapping("/api/categories")
     @ResponseBody
-    public List<Category> getCategoryList(){
-        Subject subject = SecurityUtils.getSubject();
-        return categoryService.getAllByUser((User)subject.getPrincipal());
+    public Response getCategoryList(){        
+        Subject subject = SecurityUtils.getSubject();        
+        List<Category> categories = categoryService.getAllByUser((User)subject.getPrincipal());
+        return new Response(200,"成功",categories);
     }
 
     @CrossOrigin
@@ -74,8 +76,9 @@ public class NoteController {
     @CrossOrigin
     @GetMapping("/api/notes")
     @ResponseBody
-    public List<Note> getNoteList(){
-        return noteService.getAll();
+    public Response getNoteList(){        
+        List<Note> notes = noteService.getAll();
+        return new Response(200,"成功",notes);
     }
 
 
@@ -99,8 +102,40 @@ public class NoteController {
     @CrossOrigin
     @GetMapping("/api/categories/{id}/notes")
     @ResponseBody
-    public List<Note> getNotesByCategory(@PathVariable("id") int id){
-        return noteService.getNotesByCategory(id);
+    public Response getNotesByCategory(@PathVariable("id") int id){        
+        List<Note> notes = noteService.getNotesByCategory(id);
+        return new Response(200,"成功",notes);
+    }
+    
+    @CrossOrigin
+    @GetMapping("/api/notes/search")
+    @ResponseBody
+    public Response searchNotes(
+            @RequestParam(value = "keyword", required = true) String keyword,
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "12") int size,
+            @RequestParam(value = "sortBy", defaultValue = "createdTime") String sortBy,
+            @RequestParam(value = "sortOrder", defaultValue = "desc") String sortOrder,
+            HttpServletRequest request) {
+        
+        try {
+            // 获取当前登录用户
+            Subject subject = SecurityUtils.getSubject();
+            User currentUser = (User) subject.getPrincipal();
+            
+            // 调用搜索服务
+            Map<String, Object> searchResult = noteService.searchNotesByKeyword(currentUser, keyword, page, size, sortBy, sortOrder);
+            
+            // 构建响应
+            return new Response(200, "搜索成功", searchResult, request.getRequestURI());
+        } catch (IllegalArgumentException e) {
+            Response.ErrorInfo errorInfo = new Response.ErrorInfo("BAD_REQUEST", e.getMessage(), "VALIDATION_ERROR");
+            return new Response(400, e.getMessage(), null, errorInfo, request.getRequestURI());
+        } catch (Exception e) {
+            e.printStackTrace();
+            Response.ErrorInfo errorInfo = new Response.ErrorInfo("INTERNAL_SERVER_ERROR", e.getMessage(), "SYSTEM_ERROR");
+            return new Response(500, "搜索失败，请稍后重试", null, errorInfo, request.getRequestURI());
+        }
     }
 
     @CrossOrigin

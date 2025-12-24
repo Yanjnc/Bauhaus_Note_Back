@@ -3,6 +3,7 @@ package com.note.back.pojo;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import javax.persistence.*;
+import java.sql.Timestamp;
 
 @Entity
 @Table(name = "user")
@@ -16,6 +17,8 @@ public class User {
     String username;
     String password;
     String salt;
+    String email;
+    Timestamp registerTime;
 
     public int getId() {
         return id;
@@ -47,5 +50,21 @@ public class User {
 
     public void setSalt(String salt) {
         this.salt = salt;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public Timestamp getRegisterTime() {
+        return registerTime;
+    }
+
+    public void setRegisterTime(Timestamp registerTime) {
+        this.registerTime = registerTime;
     }
 }
